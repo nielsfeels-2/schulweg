@@ -81,6 +81,11 @@
     border-radius: 7px; padding: 9px 10px; width: 100%; min-width: 0;
   }
   input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .now { border-color: var(--accent); }
+  .now .nowbtn { width: 100%; padding: 14px 18px; font-size: 16px; }
+  .now .big { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; text-wrap: balance; }
+  .now .big b { font-family: var(--mono); font-weight: 500; color: var(--accent); }
+  .now p { margin: 6px 0 0; color: var(--muted); }
   .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   button {
     font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-fg);
@@ -101,6 +106,12 @@
     <h1>Schulweg Bonn</h1>
     <p class="sub">Brücke und Abfahrt für den Hinweg, danach Weiterfahrt nach Troisdorf. Prognose mit Verkehrsdaten von Google Routes.</p>
   </header>
+
+  <section class="panel now" id="nowPanel" aria-live="polite">
+    <h2>Jetzt von der Stiftsschule los</h2>
+    <button type="button" class="nowbtn" id="nowBtn">Schaffe ich es rechtzeitig?</button>
+    <div id="nowBody" style="margin-top:12px"></div>
+  </section>
 
   <section class="panel reco" id="reco" aria-live="polite">
     <h2>Empfehlung</h2>
@@ -234,16 +245,18 @@
   }
 
   function baseBody(from, to, depart) {
-    return {
+    var b = {
       origin: { address: from },
       destination: { address: to },
       travelMode: "DRIVE",
       routingPreference: "TRAFFIC_AWARE_OPTIMAL",
-      departureTime: depart.toISOString(),
       languageCode: "de-DE",
       regionCode: "DE",
       units: "METRIC"
     };
+    // Ohne departureTime rechnet Google mit "jetzt", also mit der aktuellen Verkehrslage.
+    if (depart) b.departureTime = depart.toISOString();
+    return b;
   }
   function body1(routeKey, depart) {
     var b = baseBody($("origin").value.trim(), $("dest").value.trim(), depart);
@@ -504,6 +517,71 @@
     go.disabled = false; go.textContent = "Berechnen";
   }
 
+  /* ---------- Jetzt-Prüfung: Abfahrt sofort, aktuelle Verkehrslage ---------- */
+  async function runNow() {
+    var key = $("key").value.trim();
+    var nb = $("nowBody");
+    nb.innerHTML = "";
+    if (!key || !$("dest").value.trim() || !$("work").value.trim()) {
+      nb.appendChild(el("p", "err", "Schlüssel, Stiftsschule und Adresse der Europaschule werden gebraucht."));
+      return;
+    }
+    save();
+    var btn = $("nowBtn");
+    btn.disabled = true; btn.textContent = "Frage aktuelle Verkehrslage ab…";
+    var started = new Date();
+    var res = {}, errs = [];
+    await Promise.all(VORDER.map(function (k) {
+      return post(body2(k, null), key).then(function (r) { res[k] = r; })
+        .catch(function (e) { errs.push(VARIANTS[k].label + ": " + e.message); });
+    }));
+    btn.disabled = false; btn.textContent = "Schaffe ich es rechtzeitig?";
+
+    errs.forEach(function (m) { nb.appendChild(el("p", "err", m)); });
+    var best = null;
+    VORDER.forEach(function (k) {
+      if (res[k] && (!best || res[k].sec < res[best].sec)) best = k;
+    });
+    if (!best) return;
+
+    var c = res[best];
+    var lessonMin = toMin($("lesson").value);
+    var wb = +$("workbuffer").value || 0;
+    var nowMin = started.getHours() * 60 + started.getMinutes() + started.getSeconds() / 60;
+    var arrive = nowMin + c.sec / 60;
+    var margin = Math.round(lessonMin - (arrive + wb));
+    var latest = lessonMin - wb - c.sec / 60;
+
+    var big = el("div", "big");
+    big.innerHTML = "Ankunft ca. <b></b>";
+    big.querySelector("b").textContent = clock(arrive);
+    nb.appendChild(big);
+
+    var via = best === "land" ? "über die Landstraße" : (c.desc ? "über " + c.desc : "auf dem schnellsten Weg");
+    nb.appendChild(el("p", "", "Wenn du jetzt (" + clock(nowMin) + " Uhr) losfährst: " + fmtMin(c.sec) + " " + via +
+      ", " + km(c.km) + ". Unterricht beginnt um " + $("lesson").value + " Uhr."));
+
+    var cls = margin >= 5 ? "good" : (margin >= 0 ? "warn" : "bad");
+    var txt = margin >= 0
+      ? (margin >= 5 ? "Schaffst du" : "Knapp") + ": noch " + margin + " Min. Luft nach " + wb + " Min. Puffer"
+      : "Schaffst du nicht: " + (-margin) + " Min. zu spät (mit " + wb + " Min. Puffer)";
+    nb.appendChild(el("span", "tag " + cls, txt));
+
+    if (margin >= 0) {
+      nb.appendChild(el("p", "", "Spätestens um " + clock(latest) + " Uhr losfahren."));
+    }
+    var other = best === "fast" ? "land" : "fast";
+    if (res[other]) {
+      var diff = Math.round((res[other].sec - c.sec) / 60);
+      nb.appendChild(el("p", "", VARIANTS[other].label + ": " + fmtMin(res[other].sec) +
+        (diff > 0 ? " (" + diff + " Min. länger)" : "") + (res[other].desc ? ", via " + res[other].desc : "") + "."));
+    }
+    var d = started.getDay();
+    if (d === 0 || d === 6) nb.appendChild(el("p", "hint", "Heute ist Wochenende, die Verkehrslage ist nicht mit einem Schultag vergleichbar."));
+    if (nowMin > lessonMin) nb.appendChild(el("p", "hint", "Der Unterricht hat laut Einstellung schon begonnen."));
+  }
+
+  $("nowBtn").addEventListener("click", runNow);
   $("form").addEventListener("submit", run);
   ["from", "to", "work"].forEach(function (id) { $(id).addEventListener("input", updateCount); });
   $("forget").addEventListener("click", function () {
