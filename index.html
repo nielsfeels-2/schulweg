@@ -108,8 +108,10 @@
   </header>
 
   <section class="panel now" id="nowPanel" aria-live="polite">
-    <h2>Jetzt von der Stiftsschule los</h2>
-    <button type="button" class="nowbtn" id="nowBtn">Schaffe ich es rechtzeitig?</button>
+    <h2>Jetzt losfahren, aktuelle Verkehrslage</h2>
+    <button type="button" class="nowbtn" id="homeBtn">Von zu Hause: welche Brücke jetzt?</button>
+    <div id="homeBody" style="margin-top:12px"></div>
+    <button type="button" class="nowbtn ghost" id="nowBtn" style="margin-top:12px">Von der Stiftsschule: schaffe ich es?</button>
     <div id="nowBody" style="margin-top:12px"></div>
   </section>
 
@@ -535,7 +537,7 @@
       return post(body2(k, null), key).then(function (r) { res[k] = r; })
         .catch(function (e) { errs.push(VARIANTS[k].label + ": " + e.message); });
     }));
-    btn.disabled = false; btn.textContent = "Schaffe ich es rechtzeitig?";
+    btn.disabled = false; btn.textContent = "Von der Stiftsschule: schaffe ich es?";
 
     errs.forEach(function (m) { nb.appendChild(el("p", "err", m)); });
     var best = null;
@@ -581,6 +583,68 @@
     if (nowMin > lessonMin) nb.appendChild(el("p", "hint", "Der Unterricht hat laut Einstellung schon begonnen."));
   }
 
+  /* ---------- Jetzt von zu Hause: welche Brücke ist gerade schneller? ---------- */
+  async function runHome() {
+    var key = $("key").value.trim();
+    var hb = $("homeBody");
+    hb.innerHTML = "";
+    if (!key || !$("origin").value.trim() || !$("dest").value.trim()) {
+      hb.appendChild(el("p", "err", "Schlüssel, Start und Stiftsschule werden gebraucht."));
+      return;
+    }
+    save();
+    var btn = $("homeBtn");
+    btn.disabled = true; btn.textContent = "Frage aktuelle Verkehrslage ab…";
+    var started = new Date();
+    var res = {}, errs = [];
+    await Promise.all(ORDER.map(function (k) {
+      return post(body1(k, null), key).then(function (r) { res[k] = r; })
+        .catch(function (e) { errs.push(VIA[k].label + ": " + e.message); });
+    }));
+    btn.disabled = false; btn.textContent = "Von zu Hause: welche Brücke jetzt?";
+
+    errs.forEach(function (m) { hb.appendChild(el("p", "err", m)); });
+    var best = null;
+    ["kennedy", "adenauer"].forEach(function (k) {
+      if (res[k] && (!best || res[k].sec < res[best].sec)) best = k;
+    });
+    if (!best) return;
+
+    var c = res[best];
+    var nowMin = started.getHours() * 60 + started.getMinutes() + started.getSeconds() / 60;
+    var arrive = nowMin + c.sec / 60;
+    var limit = toMin($("arrive").value) - (+$("buffer").value || 0);
+    var margin = Math.round(limit - arrive);
+
+    var big = el("div", "big");
+    big.innerHTML = "Jetzt über die <span></span>";
+    big.querySelector("span").textContent = VIA[best].label;
+    hb.appendChild(big);
+
+    hb.appendChild(el("p", "", "Fahrt ca. " + fmtMin(c.sec) + ", " + km(c.km) + ". Ankunft vor der Schule ca. " + clock(arrive) +
+      " (plus " + ($("buffer").value || 0) + " Min. Puffer), gerechnet ab " + clock(nowMin) + " Uhr."));
+
+    var cls = margin >= 5 ? "good" : (margin >= 0 ? "warn" : "bad");
+    var txt = margin >= 0
+      ? (margin >= 5 ? "Schaffst du" : "Knapp") + " " + $("arrive").value + " Uhr: noch " + margin + " Min. Luft"
+      : "Schaffst du " + $("arrive").value + " Uhr nicht: " + (-margin) + " Min. zu spät";
+    hb.appendChild(el("span", "tag " + cls, txt));
+
+    ORDER.forEach(function (k) {
+      if (!res[k]) return;
+      var r = res[k];
+      var mark = k === best ? "→ " : "";
+      var diff = Math.round((r.sec - c.sec) / 60);
+      var line = mark + VIA[k].label + ": " + fmtMin(r.sec) + " · " + km(r.km) +
+        (k !== best && diff > 0 && k !== "google" ? " (" + diff + " Min. länger)" : "") +
+        (k === "google" && r.desc ? " · via " + r.desc : "");
+      hb.appendChild(el("p", "", line));
+    });
+    var d = started.getDay();
+    if (d === 0 || d === 6) hb.appendChild(el("p", "hint", "Heute ist Wochenende, die Verkehrslage ist nicht mit einem Schultag vergleichbar."));
+  }
+
+  $("homeBtn").addEventListener("click", runHome);
   $("nowBtn").addEventListener("click", runNow);
   $("form").addEventListener("submit", run);
   ["from", "to", "work"].forEach(function (id) { $(id).addEventListener("input", updateCount); });
