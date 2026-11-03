@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-title" content="Schulweg">
 <title>Schulweg Bonn</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-  /* Layout: eine Spalte. Oben Empfehlung (Hinweg + Weiterfahrt), darunter zwei Vergleichstabellen, unten Einstellungen */
+  /* Layout: Handy zuerst. Oben drei große Aktionen (die zur Tageszeit passende steht vorn),
+     darunter nur das Ergebnis der zuletzt gewählten Aktion, Einstellungen eingeklappt ganz unten. */
   :root {
     --bg: #f3f5f4;
     --surface: #ffffff;
@@ -17,7 +19,7 @@
     --accent-fg: #ffffff;
     --good: #0b6b55;
     --good-bg: #dff1ea;
-    --warn: #8a5a00;
+    --warn: #7a4f00;
     --warn-bg: #fbefd1;
     --bad: #a3261d;
     --bad-bg: #f9dfdc;
@@ -27,97 +29,149 @@
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #101614; --surface: #18201d; --fg: #e6ece9; --muted: #92a19b; --line: #2b3733;
+      --bg: #101614; --surface: #18201d; --fg: #e6ece9; --muted: #98a7a1; --line: #2b3733;
       --accent: #4fc2a3; --accent-fg: #0b1512; --good: #6fd6b8; --good-bg: #17352c;
       --warn: #e9b950; --warn-bg: #35290e; --bad: #ff8d83; --bad-bg: #3b1916;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #101614; --surface: #18201d; --fg: #e6ece9; --muted: #92a19b; --line: #2b3733;
+    --bg: #101614; --surface: #18201d; --fg: #e6ece9; --muted: #98a7a1; --line: #2b3733;
     --accent: #4fc2a3; --accent-fg: #0b1512; --good: #6fd6b8; --good-bg: #17352c;
     --warn: #e9b950; --warn-bg: #35290e; --bad: #ff8d83; --bad-bg: #3b1916;
     color-scheme: dark;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0; background: var(--bg); color: var(--fg);
-    font: 15px/1.5 var(--font);
-    padding-block: 20px 40px;
+    font: 16px/1.5 var(--font);
+    padding-block: 16px 40px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
-  main { max-width: 760px; margin: 0 auto; display: grid; gap: 16px; }
-  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+  main { max-width: 640px; margin: 0 auto; display: grid; gap: 14px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0; font-size: 13px; }
   h2 { font-size: 12px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
-  .sub { color: var(--muted); margin: 2px 0 0; }
-  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
-  .reco { border-color: var(--accent); }
-  .reco .big { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; text-wrap: balance; }
-  .reco .big b { font-family: var(--mono); font-weight: 500; color: var(--accent); }
-  .reco p { margin: 6px 0 0; color: var(--muted); }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
+  .result { border-color: var(--accent); }
+
+  /* Aktionen */
+  .btns { display: grid; gap: 10px; }
+  .act {
+    display: grid; gap: 2px; text-align: left; width: 100%;
+    font: inherit; color: var(--fg); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 16px; min-height: 60px; cursor: pointer;
+  }
+  .act .t { font-size: 17px; font-weight: 600; line-height: 1.25; }
+  .act .s { font-size: 13px; color: var(--muted); }
+  .act.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .act.primary .s { color: inherit; opacity: .88; }
+  .act:disabled { opacity: .6; cursor: progress; }
+  #suggest { margin: 10px 0 0; }
+
+  /* Ergebnis */
+  .big { font-size: 28px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; text-wrap: balance; }
+  .big b { font-family: var(--mono); font-weight: 500; color: var(--accent); }
+  .result p, .leg p { margin: 8px 0 0; }
+  .muted { color: var(--muted); }
   .leg { padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--line); }
   .leg:first-child { padding-top: 0; margin-top: 0; border-top: 0; }
-  .legname { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin: 0 0 4px !important; }
-  .tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; font-weight: 500; margin-top: 8px; }
+  .legname { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin: 0 0 6px !important; }
+  .tag { display: inline-block; font-size: 14px; padding: 4px 12px; border-radius: 99px; font-weight: 600; margin-top: 10px; }
   .tag.good { background: var(--good-bg); color: var(--good); }
   .tag.warn { background: var(--warn-bg); color: var(--warn); }
   .tag.bad { background: var(--bad-bg); color: var(--bad); }
-  .scroll { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; min-width: 520px; font-variant-numeric: tabular-nums; }
-  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .opts { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+  .opts li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .opts li.best { font-weight: 600; color: var(--good); }
+  .opts li > span { display: grid; gap: 1px; min-width: 0; }
+  .opts li > span:last-child { text-align: right; flex: none; }
+  .opts .sub2 { color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.3; }
+  .opts li.best .sub2 { color: inherit; opacity: .85; }
+  .err { background: var(--bad-bg); color: var(--bad); border-radius: 8px; padding: 10px 12px; font-size: 14px; margin: 0 0 8px; overflow-wrap: anywhere; }
+  .hint { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 10px 12px; font-size: 14px; margin: 10px 0 0; }
+
+  /* Tabellen */
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 15px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
   th { font-size: 12px; color: var(--muted); font-weight: 600; }
   td.time { font-family: var(--mono); }
-  td.best { background: var(--good-bg); color: var(--good); font-weight: 600; }
-  td .sub2 { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
+  td.best { background: var(--good-bg); color: var(--good); font-weight: 600; border-radius: 6px; }
+  td .sub2 { display: block; color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.3; }
   td.best .sub2 { color: inherit; opacity: .85; }
+  .note { font-size: 13px; color: var(--muted); margin: 0; }
+  .scroll { overflow-x: auto; }
+
+  /* Einstellungen */
+  details.panel > summary {
+    cursor: pointer; list-style: none; font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--muted); font-weight: 600;
+    display: flex; justify-content: space-between; align-items: center; min-height: 28px;
+  }
+  details.panel > summary::-webkit-details-marker { display: none; }
+  details.panel > summary::after { content: "+"; font-size: 20px; font-weight: 400; line-height: 1; }
+  details.panel[open] > summary::after { content: "–"; }
+  details.panel[open] > summary { margin-bottom: 12px; }
   form { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .full { grid-column: 1 / -1; }
-  fieldset { border: 0; padding: 0; margin: 0; display: contents; }
-  .grp { grid-column: 1 / -1; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin: 6px 0 -4px; }
+  .grp { grid-column: 1 / -1; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin: 8px 0 -4px; }
   label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 500; }
   input[type=text], input[type=password], input[type=time], input[type=number] {
-    font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line);
-    border-radius: 7px; padding: 9px 10px; width: 100%; min-width: 0;
+    font: inherit; font-size: 16px; color: var(--fg); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 12px; width: 100%; min-width: 0; min-height: 44px;
   }
-  input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .now { border-color: var(--accent); }
-  .now .nowbtn { width: 100%; padding: 14px 18px; font-size: 16px; }
-  .now .big { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; text-wrap: balance; }
-  .now .big b { font-family: var(--mono); font-weight: 500; color: var(--accent); }
-  .now p { margin: 6px 0 0; color: var(--muted); }
+  input:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  button {
-    font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-fg);
-    border: 0; border-radius: 8px; padding: 11px 18px; cursor: pointer;
+  button.ghost {
+    font: inherit; font-weight: 500; background: transparent; color: var(--fg);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 16px; cursor: pointer; min-height: 44px;
   }
-  button.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); font-weight: 500; }
-  button:disabled { opacity: .55; cursor: progress; }
-  .note { font-size: 13px; color: var(--muted); margin: 0; }
-  .err { background: var(--bad-bg); color: var(--bad); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin: 0 0 8px; overflow-wrap: anywhere; }
-  .hint { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin: 8px 0 0; }
-  @media (max-width: 520px) { form { grid-template-columns: minmax(0, 1fr); } .reco .big { font-size: 22px; } }
-  @media (prefers-reduced-motion: no-preference) { button { transition: opacity .15s; } }
+  @media (max-width: 520px) { form { grid-template-columns: minmax(0, 1fr); } .big { font-size: 26px; } }
+  @media (prefers-reduced-motion: no-preference) { .act { transition: opacity .15s; } }
 </style>
 </head>
 <body>
 <main>
   <header>
     <h1>Schulweg Bonn</h1>
-    <p class="sub">Brücke und Abfahrt für den Hinweg, danach Weiterfahrt nach Troisdorf. Prognose mit Verkehrsdaten von Google Routes.</p>
+    <p class="sub">Stiftsschule, dann Troisdorf</p>
   </header>
 
-  <section class="panel now" id="nowPanel" aria-live="polite">
-    <h2>Jetzt losfahren, aktuelle Verkehrslage</h2>
-    <button type="button" class="nowbtn" id="homeBtn">Von zu Hause: welche Brücke jetzt?</button>
-    <div id="homeBody" style="margin-top:12px"></div>
-    <button type="button" class="nowbtn ghost" id="nowBtn" style="margin-top:12px">Von der Stiftsschule: schaffe ich es?</button>
-    <div id="nowBody" style="margin-top:12px"></div>
+  <section class="panel" id="actions">
+    <div class="btns">
+      <button type="button" class="act" id="homeBtn">
+        <span class="t">Von zu Hause losfahren</span>
+        <span class="s">Welche Brücke ist jetzt schneller? Aktuelle Verkehrslage</span>
+      </button>
+      <button type="button" class="act" id="nowBtn">
+        <span class="t">Von der Stiftsschule losfahren</span>
+        <span class="s">Schaffe ich Troisdorf rechtzeitig? Aktuelle Verkehrslage</span>
+      </button>
+      <button type="button" class="act" id="planBtn">
+        <span class="t">Abfahrt planen</span>
+        <span class="s">Wann los? Prognose, auch für den Abend davor</span>
+      </button>
+    </div>
+    <p class="note" id="suggest"></p>
   </section>
 
-  <section class="panel reco" id="reco" aria-live="polite">
+  <section class="panel result" id="homePanel" hidden aria-live="polite">
+    <h2>Von zu Hause, jetzt</h2>
+    <div id="homeBody"></div>
+  </section>
+
+  <section class="panel result" id="nowPanel" hidden aria-live="polite">
+    <h2>Von der Stiftsschule, jetzt</h2>
+    <div id="nowBody"></div>
+  </section>
+
+  <section class="panel result" id="reco" hidden aria-live="polite">
     <h2>Empfehlung</h2>
-    <div id="recoBody"><p class="note">Trage unten Schlüssel, Start und Arbeitsplatz ein und tippe auf „Berechnen“.</p></div>
+    <div id="recoBody"></div>
   </section>
 
   <section class="panel" id="resultPanel" hidden>
@@ -132,16 +186,16 @@
     <p class="note" id="leg2Note" style="margin-top:10px"></p>
   </section>
 
-  <section class="panel">
-    <h2>Einstellungen</h2>
+  <details class="panel" id="settings">
+    <summary>Einstellungen</summary>
     <form id="form" autocomplete="off">
       <label class="full">Google-API-Schlüssel (Routes API)
         <input id="key" type="password" placeholder="AIza…" autocomplete="off" spellcheck="false">
       </label>
 
       <div class="grp">Hinweg mit den Kindern</div>
-      <label class="full">Start (Straße und Hausnummer, Bonn)
-        <input id="origin" type="text" placeholder="z. B. Straße Hausnummer, 53229 Bonn">
+      <label class="full">Start
+        <input id="origin" type="text" value="Kapitelshof 44, 53229 Bonn">
       </label>
       <label class="full">Stiftsschule
         <input id="dest" type="text" value="Theaterstraße 60, 53111 Bonn">
@@ -150,7 +204,7 @@
         <input id="arrive" type="time" value="07:50">
       </label>
       <label>Puffer Parken und Laufen (Min.)
-        <input id="buffer" type="number" min="0" max="30" value="8">
+        <input id="buffer" type="number" inputmode="numeric" min="0" max="30" value="8">
       </label>
       <label>Früheste Abfahrt zu Hause
         <input id="from" type="time" value="06:40">
@@ -160,27 +214,26 @@
       </label>
 
       <div class="grp">Weiterfahrt zur Arbeit</div>
-      <label class="full">Europaschule Troisdorf (Adresse)
+      <label class="full">Europaschule Troisdorf
         <input id="work" type="text" value="Am Bergeracker 31, 53840 Troisdorf">
       </label>
       <label>Unterrichtsbeginn
         <input id="lesson" type="time" value="08:30">
       </label>
       <label>Puffer an der Schule (Min.)
-        <input id="workbuffer" type="number" min="0" max="30" value="10">
+        <input id="workbuffer" type="number" inputmode="numeric" min="0" max="30" value="10">
       </label>
       <label class="full">Früheste Abfahrt an der Stiftsschule
         <input id="leave2" type="time" value="08:00">
       </label>
 
       <div class="full actions">
-        <button type="submit" id="go">Berechnen</button>
         <button type="button" class="ghost" id="forget">Schlüssel entfernen</button>
         <span class="note" id="count"></span>
       </div>
-      <p class="note full">Der Schlüssel bleibt in diesem Browser und geht nur an Google. Beschränke ihn in der Google Cloud Console auf die Routes API und stelle ein Budget-Limit ein. Prognose-Abfragen mit Verkehr zählen als „Compute Routes Pro“.</p>
+      <p class="note full">Der Schlüssel bleibt in diesem Browser und geht nur an Google. Beschränke ihn in der Google Cloud Console auf die Routes API und stelle ein Budget-Limit ein. Abfragen mit Verkehr zählen als „Compute Routes Pro“.</p>
     </form>
-  </section>
+  </details>
 </main>
 
 <script>
@@ -188,18 +241,19 @@
   "use strict";
   var ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes";
   var VIA = {
-    kennedy: { label: "Kennedybrücke", address: "Kennedybrücke, Bonn" },
-    adenauer: { label: "Konrad-Adenauer-Brücke", address: "Konrad-Adenauer-Brücke, Bonn" },
-    google: { label: "Google-Vorschlag", address: null }
+    kennedy: { label: "Kennedybrücke", name: "Kennedybrücke", short: "Kennedy", address: "Kennedybrücke, Bonn" },
+    adenauer: { label: "Konrad-Adenauer-Brücke", name: "Südbrücke", short: "Südbrücke", address: "Konrad-Adenauer-Brücke, Bonn" },
+    google: { label: "Google-Vorschlag", name: "Google-Vorschlag", short: "Google", address: null }
   };
   var ORDER = ["kennedy", "adenauer", "google"];
   var VARIANTS = {
-    fast: { label: "Schnellste (Google)", avoid: false },
-    land: { label: "Ohne Autobahn", avoid: true }
+    fast: { label: "Schnellste (Google)", short: "Schnellste", avoid: false },
+    land: { label: "Ohne Autobahn", short: "Ohne Autobahn", avoid: true }
   };
   var VORDER = ["fast", "land"];
   var STEP_MIN = 10;
   var LEG2_SLOTS = [0, 10, 20];
+  var PANELS = ["homePanel", "nowPanel", "reco", "resultPanel", "leg2Panel"];
 
   var $ = function (id) { return document.getElementById(id); };
   var ids = ["key", "origin", "dest", "arrive", "buffer", "from", "to", "work", "lesson", "workbuffer", "leave2"];
@@ -208,7 +262,7 @@
     try {
       ids.forEach(function (id) {
         var v = localStorage.getItem("schulweg." + id);
-        if (v !== null) $(id).value = v;
+        if (v) $(id).value = v;
       });
     } catch (e) {}
   }
@@ -217,11 +271,75 @@
   }
 
   function pad(n) { return (n < 10 ? "0" : "") + n; }
-  function hm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
   function toMin(v) { var p = (v || "0:0").split(":"); return (+p[0]) * 60 + (+p[1]); }
   function clock(minutes) {
     var m = Math.round(minutes);
     return pad(Math.floor(m / 60)) + ":" + pad(m % 60);
+  }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function fmtMin(sec) { return Math.round(sec / 60) + " Min."; }
+  function km(v) { return v.toFixed(1).replace(".", ",") + " km"; }
+  function dayLabel(d) {
+    return d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+  }
+
+  /* ---------- Anzeige ---------- */
+  function showOnly(list) {
+    PANELS.forEach(function (p) { $(p).hidden = list.indexOf(p) === -1; });
+  }
+  function setBusy(btn, busy) {
+    var all = ["homeBtn", "nowBtn", "planBtn"];
+    all.forEach(function (id) { $(id).disabled = busy; });
+    btn.querySelector(".t").dataset.keep = btn.querySelector(".t").dataset.keep || btn.querySelector(".t").textContent;
+    btn.querySelector(".t").textContent = busy ? "Frage Google ab…" : btn.querySelector(".t").dataset.keep;
+  }
+  function needSettings(body, msg) {
+    body.innerHTML = "";
+    body.appendChild(el("p", "err", msg));
+    $("settings").open = true;
+    $("settings").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function optRow(name, sub, right, sub2, best) {
+    var li = el("li", best ? "best" : "");
+    var l = el("span", "");
+    l.appendChild(document.createTextNode(name));
+    if (sub) l.appendChild(el("span", "sub2", sub));
+    var r = el("span", "");
+    r.appendChild(document.createTextNode(right));
+    if (sub2) r.appendChild(el("span", "sub2", sub2));
+    li.appendChild(l); li.appendChild(r);
+    return li;
+  }
+  function judge(margin, okTxt, tightTxt, lateTxt) {
+    var cls = margin >= 5 ? "good" : (margin >= 0 ? "warn" : "bad");
+    var txt = margin >= 5 ? okTxt : (margin >= 0 ? tightTxt : lateTxt);
+    return el("span", "tag " + cls, txt);
+  }
+
+  /* Zur Tageszeit passende Aktion hervorheben und nach vorn */
+  function suggestMode() {
+    var n = new Date(), d = n.getDay(), m = n.getHours() * 60 + n.getMinutes();
+    if (d > 0 && d < 6) {
+      if (m >= 6 * 60 && m < 7 * 60 + 55) return "home";
+      if (m >= 7 * 60 + 55 && m <= toMin($("lesson").value) + 5) return "school";
+    }
+    return "plan";
+  }
+  function applySuggestion() {
+    var mode = suggestMode();
+    var map = { home: "homeBtn", school: "nowBtn", plan: "planBtn" };
+    var text = { home: "Passt gerade: von zu Hause losfahren.", school: "Passt gerade: von der Stiftsschule losfahren.", plan: "Passt gerade: Abfahrt planen." };
+    Object.keys(map).forEach(function (k) {
+      var b = $(map[k]);
+      b.classList.toggle("primary", k === mode);
+      b.style.order = k === mode ? "-1" : "0";
+    });
+    $("suggest").textContent = text[mode];
   }
 
   function slotMinutes() {
@@ -233,7 +351,7 @@
   function wantsLeg2() { return $("work").value.trim().length > 0; }
   function updateCount() {
     var n = slotMinutes().length * ORDER.length + (wantsLeg2() ? LEG2_SLOTS.length * VORDER.length : 0);
-    $("count").textContent = n + " Abfragen pro Berechnung";
+    $("count").textContent = "Abfahrt planen: " + n + " Abfragen";
   }
 
   function targetDay() {
@@ -246,6 +364,7 @@
     return d;
   }
 
+  /* ---------- Google Routes ---------- */
   function baseBody(from, to, depart) {
     var b = {
       origin: { address: from },
@@ -270,7 +389,6 @@
     if (VARIANTS[variantKey].avoid) b.routeModifiers = { avoidHighways: true };
     return b;
   }
-
   async function post(payload, key) {
     var res = await fetch(ENDPOINT, {
       method: "POST",
@@ -282,32 +400,147 @@
       body: JSON.stringify(payload)
     });
     var data = await res.json().catch(function () { return {}; });
-    if (!res.ok) {
-      throw new Error((data.error && data.error.message) || ("HTTP " + res.status));
-    }
+    if (!res.ok) throw new Error((data.error && data.error.message) || ("HTTP " + res.status));
     var r = data.routes && data.routes[0];
     if (!r) throw new Error("Keine Route gefunden. Prüfe die Adressen.");
-    return {
-      sec: parseInt(r.duration, 10),
-      km: (r.distanceMeters || 0) / 1000,
-      desc: r.description || ""
-    };
+    return { sec: parseInt(r.duration, 10), km: (r.distanceMeters || 0) / 1000, desc: r.description || "" };
   }
 
-  function fmtMin(sec) { return Math.round(sec / 60) + " Min."; }
-  function dayLabel(d) {
-    return d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
-  }
-  function km(v) { return v.toFixed(1).replace(".", ",") + " km"; }
+  /* ---------- Jetzt von zu Hause ---------- */
+  async function runHome() {
+    var key = $("key").value.trim();
+    var hb = $("homeBody");
+    showOnly(["homePanel"]);
+    if (!key || !$("origin").value.trim() || !$("dest").value.trim()) {
+      return needSettings(hb, "Schlüssel, Start und Stiftsschule werden gebraucht.");
+    }
+    save();
+    hb.innerHTML = "";
+    hb.appendChild(el("p", "note", "Frage aktuelle Verkehrslage ab…"));
+    var btn = $("homeBtn"); setBusy(btn, true);
+    var started = new Date();
+    var res = {}, errs = [];
+    await Promise.all(ORDER.map(function (k) {
+      return post(body1(k, null), key).then(function (r) { res[k] = r; })
+        .catch(function (e) { errs.push(VIA[k].label + ": " + e.message); });
+    }));
+    setBusy(btn, false);
+    hb.innerHTML = "";
+    errs.forEach(function (m) { hb.appendChild(el("p", "err", m)); });
 
-  function el(tag, cls, text) {
-    var e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (text !== undefined) e.textContent = text;
-    return e;
+    var best = null;
+    ["kennedy", "adenauer"].forEach(function (k) {
+      if (res[k] && (!best || res[k].sec < res[best].sec)) best = k;
+    });
+    if (!best) return;
+
+    var c = res[best];
+    var nowMin = started.getHours() * 60 + started.getMinutes() + started.getSeconds() / 60;
+    var arrive = nowMin + c.sec / 60;
+    var limit = toMin($("arrive").value) - (+$("buffer").value || 0);
+    var margin = Math.round(limit - arrive);
+
+    var big = el("div", "big");
+    big.innerHTML = "Jetzt über die <b></b>";
+    big.querySelector("b").textContent = VIA[best].name;
+    hb.appendChild(big);
+    hb.appendChild(el("p", "", "Fahrt ca. " + fmtMin(c.sec) + ", Ankunft vor der Schule ca. " + clock(arrive) +
+      " (plus " + ($("buffer").value || 0) + " Min. Puffer)."));
+    if (nowMin < 4 * 60 || nowMin > limit + 90) {
+      hb.appendChild(el("p", "hint", "Es ist gerade nicht Hinfahrtszeit, deshalb gibt es kein Urteil zu " + $("arrive").value + " Uhr. Die Fahrzeiten zeigen nur den Vergleich der Brücken."));
+    } else {
+      hb.appendChild(judge(margin,
+        "Schaffst du " + $("arrive").value + " Uhr, " + margin + " Min. Luft",
+        "Knapp für " + $("arrive").value + " Uhr, " + margin + " Min. Luft",
+        "Schaffst du " + $("arrive").value + " Uhr nicht, " + (-margin) + " Min. zu spät"));
+    }
+
+    var ul = el("ul", "opts");
+    ORDER.forEach(function (k) {
+      if (!res[k]) return;
+      var diff = Math.round((res[k].sec - c.sec) / 60);
+      ul.appendChild(optRow(VIA[k].name,
+        k === "google" && res[k].desc ? "über " + res[k].desc : "",
+        fmtMin(res[k].sec),
+        k !== best && k !== "google" && diff > 0 ? "+" + diff + " Min." : "",
+        k === best));
+    });
+    hb.appendChild(ul);
+    hb.appendChild(el("p", "note", "Stand " + clock(nowMin) + " Uhr. Fährst du erst später los, tippe noch einmal."));
+    var d = started.getDay();
+    if (d === 0 || d === 6) hb.appendChild(el("p", "hint", "Heute ist Wochenende, die Verkehrslage ist nicht mit einem Schultag vergleichbar."));
   }
 
-  /* ---------- Hinweg ---------- */
+  /* ---------- Jetzt von der Stiftsschule ---------- */
+  async function runNow() {
+    var key = $("key").value.trim();
+    var nb = $("nowBody");
+    showOnly(["nowPanel"]);
+    if (!key || !$("dest").value.trim() || !$("work").value.trim()) {
+      return needSettings(nb, "Schlüssel, Stiftsschule und Adresse der Europaschule werden gebraucht.");
+    }
+    save();
+    nb.innerHTML = "";
+    nb.appendChild(el("p", "note", "Frage aktuelle Verkehrslage ab…"));
+    var btn = $("nowBtn"); setBusy(btn, true);
+    var started = new Date();
+    var res = {}, errs = [];
+    await Promise.all(VORDER.map(function (k) {
+      return post(body2(k, null), key).then(function (r) { res[k] = r; })
+        .catch(function (e) { errs.push(VARIANTS[k].label + ": " + e.message); });
+    }));
+    setBusy(btn, false);
+    nb.innerHTML = "";
+    errs.forEach(function (m) { nb.appendChild(el("p", "err", m)); });
+
+    var best = null;
+    VORDER.forEach(function (k) { if (res[k] && (!best || res[k].sec < res[best].sec)) best = k; });
+    if (!best) return;
+
+    var c = res[best];
+    var lessonMin = toMin($("lesson").value);
+    var wb = +$("workbuffer").value || 0;
+    var nowMin = started.getHours() * 60 + started.getMinutes() + started.getSeconds() / 60;
+    var arrive = nowMin + c.sec / 60;
+    var margin = Math.round(lessonMin - (arrive + wb));
+    var latest = lessonMin - wb - c.sec / 60;
+
+    var big = el("div", "big");
+    big.innerHTML = "Ankunft ca. <b></b>";
+    big.querySelector("b").textContent = clock(arrive);
+    nb.appendChild(big);
+    var via = best === "land" ? "über die Landstraße" : (c.desc ? "über " + c.desc : "auf dem schnellsten Weg");
+    nb.appendChild(el("p", "", "Fahrt ca. " + fmtMin(c.sec) + " " + via + ", " + km(c.km) +
+      ". Unterricht ab " + $("lesson").value + " Uhr, Puffer " + wb + " Min."));
+    var offHours = nowMin < 4 * 60 || nowMin > lessonMin + 90;
+    if (offHours) {
+      nb.appendChild(el("p", "hint", "Es ist gerade nicht Weiterfahrtszeit, deshalb gibt es kein Urteil zum Unterrichtsbeginn."));
+    } else {
+      nb.appendChild(judge(margin,
+        "Schaffst du, " + margin + " Min. Luft",
+        "Knapp, " + margin + " Min. Luft",
+        "Schaffst du nicht, " + (-margin) + " Min. zu spät"));
+      if (margin >= 0) nb.appendChild(el("p", "", "Spätestens um " + clock(latest) + " Uhr losfahren."));
+    }
+
+    var ul = el("ul", "opts");
+    VORDER.forEach(function (k) {
+      if (!res[k]) return;
+      var diff = Math.round((res[k].sec - c.sec) / 60);
+      ul.appendChild(optRow(VARIANTS[k].label,
+        res[k].desc ? "über " + res[k].desc : "",
+        fmtMin(res[k].sec),
+        k !== best && diff > 0 ? "+" + diff + " Min." : "",
+        k === best));
+    });
+    nb.appendChild(ul);
+    nb.appendChild(el("p", "note", "Stand " + clock(nowMin) + " Uhr."));
+    var d = started.getDay();
+    if (d === 0 || d === 6) nb.appendChild(el("p", "hint", "Heute ist Wochenende, die Verkehrslage ist nicht mit einem Schultag vergleichbar."));
+    if (!offHours && nowMin > lessonMin) nb.appendChild(el("p", "hint", "Der Unterricht hat laut Einstellung schon begonnen."));
+  }
+
+  /* ---------- Abfahrt planen (Prognose) ---------- */
   function renderLeg1(day, slots, grid, errors) {
     var arriveMin = toMin($("arrive").value) - (+$("buffer").value || 0);
     var best = null, fallback = null;
@@ -346,14 +579,14 @@
     leg.appendChild(el("p", "legname", "Hinweg zur Stiftsschule"));
     if (pick) {
       var big = el("div", "big");
-      big.innerHTML = (best ? "Spätestens " : "Bestes Ergebnis: ") + "<b></b> los, über die <span></span>";
+      big.innerHTML = (best ? "Spätestens " : "Bestes Ergebnis: ") + "<b></b> los, über " + "<span></span>";
       big.querySelector("b").textContent = clock(pick.m);
-      big.querySelector("span").textContent = VIA[pick.k].label;
+      big.querySelector("span").textContent = "die " + VIA[pick.k].name;
       leg.appendChild(big);
       leg.appendChild(el("p", "", "Fahrt ca. " + fmtMin(pick.c.sec) + ", Ankunft vor der Schule ca. " + clock(pick.c.arrive) +
         " (plus " + ($("buffer").value || 0) + " Min. Puffer), " + dayLabel(day) + "."));
       leg.appendChild(el("span", "tag " + (best ? "good" : "bad"),
-        best ? "schafft " + $("arrive").value + " Uhr" : "schafft " + $("arrive").value + " Uhr nicht"));
+        best ? "Schafft " + $("arrive").value + " Uhr" : "Schafft " + $("arrive").value + " Uhr nicht"));
       if (!best) leg.appendChild(el("p", "hint", "Selbst die früheste Abfahrt kommt zu spät an. Setze die früheste Abfahrt weiter nach vorn."));
     } else if (!errors.length) {
       leg.appendChild(el("p", "note", "Keine Ergebnisse."));
@@ -363,8 +596,8 @@
     var t = $("table");
     t.innerHTML = "";
     var thead = t.createTHead().insertRow();
-    thead.appendChild(el("th", "", "Abfahrt"));
-    ORDER.forEach(function (k) { thead.appendChild(el("th", "", VIA[k].label)); });
+    thead.appendChild(el("th", "", "Los"));
+    ORDER.forEach(function (k) { thead.appendChild(el("th", "", VIA[k].short)); });
     var tb = t.createTBody();
     slots.forEach(function (m, i) {
       var tr = tb.insertRow();
@@ -374,16 +607,15 @@
         var c = grid[i][k];
         if (!c) { td.textContent = "–"; return; }
         td.textContent = fmtMin(c.sec);
-        td.appendChild(el("span", "sub2", "an " + clock(c.arrive) + " · " + km(c.km)));
+        td.appendChild(el("span", "sub2", "an " + clock(c.arrive)));
         if (pick && k === pick.k && i === pick.i) td.className = "best";
       });
     });
-    $("resultTitle").textContent = "Hinweg zur Stiftsschule · " + dayLabel(day);
-    $("resultNote").textContent = "Prognose auf Basis typischer Verkehrslage für diesen Wochentag, keine Live-Messung. „An“ ist die Ankunft an der Zieladresse ohne Puffer.";
+    $("resultTitle").textContent = "Hinweg · " + dayLabel(day);
+    $("resultNote").textContent = "Prognose aus typischer Verkehrslage dieses Wochentags, keine Live-Messung. „An“ ist die Ankunft ohne Puffer.";
     $("resultPanel").hidden = false;
   }
 
-  /* ---------- Weiterfahrt ---------- */
   function renderLeg2(day, starts, grid, errors) {
     var lessonMin = toMin($("lesson").value);
     var wb = +$("workbuffer").value || 0;
@@ -399,7 +631,6 @@
         c.margin = lessonMin - (c.arrive + wb);
       });
     });
-
     var first = grid[0] || {};
     var pick = null;
     VORDER.forEach(function (k) {
@@ -413,27 +644,20 @@
       var other = pick.k === "fast" ? "land" : "fast";
       var oc = first[other];
       var big = el("div", "big");
-      big.innerHTML = "Ab <b></b> über <span></span>";
+      big.innerHTML = "Ab <b></b> " + "<span></span>";
       big.querySelector("b").textContent = clock(starts[0]);
-      var via = pick.k === "land" ? "die Landstraße" : (c.desc ? c.desc : "den schnellsten Weg");
-      big.querySelector("span").textContent = via;
+      big.querySelector("span").textContent = pick.k === "land" ? "über die Landstraße" : (c.desc ? "über " + c.desc : "schnellster Weg");
       leg.appendChild(big);
-
-      var line = "Fahrt ca. " + fmtMin(c.sec) + ", Ankunft ca. " + clock(c.arrive) + ", Unterrichtsbeginn " + $("lesson").value + " Uhr.";
-      leg.appendChild(el("p", "", line));
+      leg.appendChild(el("p", "", "Fahrt ca. " + fmtMin(c.sec) + ", Ankunft ca. " + clock(c.arrive) + ", Unterricht ab " + $("lesson").value + " Uhr."));
       if (oc) {
         var diff = Math.round((oc.sec - c.sec) / 60);
-        var cmp = pick.k === "land"
-          ? "Die Fahrt über Autobahn dauert ca. " + fmtMin(oc.sec) + (diff > 0 ? " (" + diff + " Min. länger)." : ".")
-          : "Ohne Autobahn dauert es ca. " + fmtMin(oc.sec) + (diff > 0 ? " (" + diff + " Min. länger)." : ".");
-        leg.appendChild(el("p", "", cmp));
+        leg.appendChild(el("p", "muted", (pick.k === "land" ? "Mit Autobahn: " : "Ohne Autobahn: ") + fmtMin(oc.sec) + (diff > 0 ? " (" + diff + " Min. länger)." : ".")));
       }
       var margin = Math.round(c.margin);
-      var cls = margin >= 5 ? "good" : (margin >= 0 ? "warn" : "bad");
-      var txt = margin >= 0
-        ? (margin >= 5 ? "schaffst du" : "knapp") + ": noch " + margin + " Min. Luft nach " + wb + " Min. Puffer"
-        : "schaffst du nicht: " + (-margin) + " Min. zu spät (mit " + wb + " Min. Puffer)";
-      leg.appendChild(el("span", "tag " + cls, txt));
+      leg.appendChild(judge(margin,
+        "Schaffst du, " + margin + " Min. Luft",
+        "Knapp, " + margin + " Min. Luft",
+        "Schaffst du nicht, " + (-margin) + " Min. zu spät"));
     } else {
       leg.appendChild(el("p", "note", "Keine Ergebnisse für die Weiterfahrt."));
     }
@@ -443,36 +667,38 @@
     var t = $("table2");
     t.innerHTML = "";
     var thead = t.createTHead().insertRow();
-    thead.appendChild(el("th", "", "Abfahrt"));
-    VORDER.forEach(function (k) { thead.appendChild(el("th", "", VARIANTS[k].label)); });
+    thead.appendChild(el("th", "", "Los"));
+    VORDER.forEach(function (k) { thead.appendChild(el("th", "", VARIANTS[k].short)); });
     var tb = t.createTBody();
     starts.forEach(function (m, i) {
       var tr = tb.insertRow();
-      tr.insertCell().className = "time";
-      tr.cells[0].textContent = clock(m);
+      var td0 = tr.insertCell(); td0.className = "time"; td0.textContent = clock(m);
       VORDER.forEach(function (k) {
         var td = tr.insertCell();
         var c = grid[i][k];
         if (!c) { td.textContent = "–"; return; }
         td.textContent = fmtMin(c.sec);
-        var sub = "an " + clock(c.arrive) + " · " + km(c.km) + (c.desc ? " · via " + c.desc : "");
-        td.appendChild(el("span", "sub2", sub));
+        td.appendChild(el("span", "sub2", "an " + clock(c.arrive) + (c.desc ? " · via " + c.desc : "")));
         if (pick && i === 0 && k === pick.k) td.className = "best";
       });
     });
-    $("leg2Title").textContent = "Weiterfahrt nach Troisdorf · " + dayLabel(day);
-    $("leg2Note").textContent = "Die späteren Abfahrten zeigen, wie viel Zeit du bei Verzögerungen an der Schule hast. Prognose aus typischer Verkehrslage, keine Live-Messung. „Ohne Autobahn“ vermeidet Autobahnen nach Möglichkeit.";
+    $("leg2Title").textContent = "Weiterfahrt · " + dayLabel(day);
+    $("leg2Note").textContent = "Spätere Abfahrten zeigen den Spielraum bei Verzögerungen an der Schule. Prognose, keine Live-Messung.";
     $("leg2Panel").hidden = false;
   }
 
-  async function run(ev) {
-    ev.preventDefault();
+  async function runPlan() {
     var key = $("key").value.trim();
+    var rb = $("recoBody");
+    showOnly(["reco"]);
     if (!key || !$("origin").value.trim() || !$("dest").value.trim()) {
-      $("recoBody").innerHTML = '<p class="err">Schlüssel, Start und Stiftsschule werden gebraucht.</p>';
-      return;
+      return needSettings(rb, "Schlüssel, Start und Stiftsschule werden gebraucht.");
     }
     save();
+    rb.innerHTML = "";
+    rb.appendChild(el("p", "note", "Frage Prognose ab…"));
+    var btn = $("planBtn"); setBusy(btn, true);
+
     var day = targetDay();
     var mins = slotMinutes();
     var grid = mins.map(function () { return {}; });
@@ -481,172 +707,39 @@
     var starts = LEG2_SLOTS.map(function (d) { return toMin($("leave2").value) + d; });
     var grid2 = starts.map(function () { return {}; });
 
-    var go = $("go"); go.disabled = true; go.textContent = "Rechne…";
-    $("recoBody").innerHTML = '<p class="note">Frage Google nach Routen…</p>';
-
     var jobs = [];
     mins.forEach(function (m, i) {
       var depart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, m);
       ORDER.forEach(function (k) {
-        jobs.push(
-          post(body1(k, depart), key).then(function (r) { grid[i][k] = r; })
-            .catch(function (e) {
-              var msg = VIA[k].label + " " + clock(m) + ": " + e.message;
-              if (errors1.indexOf(msg) === -1 && errors1.length < 3) errors1.push(msg);
-            })
-        );
+        jobs.push(post(body1(k, depart), key).then(function (r) { grid[i][k] = r; })
+          .catch(function (e) {
+            var msg = VIA[k].label + " " + clock(m) + ": " + e.message;
+            if (errors1.indexOf(msg) === -1 && errors1.length < 3) errors1.push(msg);
+          }));
       });
     });
     if (withLeg2) {
       starts.forEach(function (m, i) {
         var depart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, m);
         VORDER.forEach(function (k) {
-          jobs.push(
-            post(body2(k, depart), key).then(function (r) { grid2[i][k] = r; })
-              .catch(function (e) {
-                var msg = "Weiterfahrt " + VARIANTS[k].label + " " + clock(m) + ": " + e.message;
-                if (errors2.indexOf(msg) === -1 && errors2.length < 3) errors2.push(msg);
-              })
-          );
+          jobs.push(post(body2(k, depart), key).then(function (r) { grid2[i][k] = r; })
+            .catch(function (e) {
+              var msg = "Weiterfahrt " + VARIANTS[k].label + " " + clock(m) + ": " + e.message;
+              if (errors2.indexOf(msg) === -1 && errors2.length < 3) errors2.push(msg);
+            }));
         });
       });
-    } else {
-      $("leg2Panel").hidden = true;
     }
     await Promise.all(jobs);
+    setBusy(btn, false);
     renderLeg1(day, mins, grid, errors1);
     if (withLeg2) renderLeg2(day, starts, grid2, errors2);
-    go.disabled = false; go.textContent = "Berechnen";
-  }
-
-  /* ---------- Jetzt-Prüfung: Abfahrt sofort, aktuelle Verkehrslage ---------- */
-  async function runNow() {
-    var key = $("key").value.trim();
-    var nb = $("nowBody");
-    nb.innerHTML = "";
-    if (!key || !$("dest").value.trim() || !$("work").value.trim()) {
-      nb.appendChild(el("p", "err", "Schlüssel, Stiftsschule und Adresse der Europaschule werden gebraucht."));
-      return;
-    }
-    save();
-    var btn = $("nowBtn");
-    btn.disabled = true; btn.textContent = "Frage aktuelle Verkehrslage ab…";
-    var started = new Date();
-    var res = {}, errs = [];
-    await Promise.all(VORDER.map(function (k) {
-      return post(body2(k, null), key).then(function (r) { res[k] = r; })
-        .catch(function (e) { errs.push(VARIANTS[k].label + ": " + e.message); });
-    }));
-    btn.disabled = false; btn.textContent = "Von der Stiftsschule: schaffe ich es?";
-
-    errs.forEach(function (m) { nb.appendChild(el("p", "err", m)); });
-    var best = null;
-    VORDER.forEach(function (k) {
-      if (res[k] && (!best || res[k].sec < res[best].sec)) best = k;
-    });
-    if (!best) return;
-
-    var c = res[best];
-    var lessonMin = toMin($("lesson").value);
-    var wb = +$("workbuffer").value || 0;
-    var nowMin = started.getHours() * 60 + started.getMinutes() + started.getSeconds() / 60;
-    var arrive = nowMin + c.sec / 60;
-    var margin = Math.round(lessonMin - (arrive + wb));
-    var latest = lessonMin - wb - c.sec / 60;
-
-    var big = el("div", "big");
-    big.innerHTML = "Ankunft ca. <b></b>";
-    big.querySelector("b").textContent = clock(arrive);
-    nb.appendChild(big);
-
-    var via = best === "land" ? "über die Landstraße" : (c.desc ? "über " + c.desc : "auf dem schnellsten Weg");
-    nb.appendChild(el("p", "", "Wenn du jetzt (" + clock(nowMin) + " Uhr) losfährst: " + fmtMin(c.sec) + " " + via +
-      ", " + km(c.km) + ". Unterricht beginnt um " + $("lesson").value + " Uhr."));
-
-    var cls = margin >= 5 ? "good" : (margin >= 0 ? "warn" : "bad");
-    var txt = margin >= 0
-      ? (margin >= 5 ? "Schaffst du" : "Knapp") + ": noch " + margin + " Min. Luft nach " + wb + " Min. Puffer"
-      : "Schaffst du nicht: " + (-margin) + " Min. zu spät (mit " + wb + " Min. Puffer)";
-    nb.appendChild(el("span", "tag " + cls, txt));
-
-    if (margin >= 0) {
-      nb.appendChild(el("p", "", "Spätestens um " + clock(latest) + " Uhr losfahren."));
-    }
-    var other = best === "fast" ? "land" : "fast";
-    if (res[other]) {
-      var diff = Math.round((res[other].sec - c.sec) / 60);
-      nb.appendChild(el("p", "", VARIANTS[other].label + ": " + fmtMin(res[other].sec) +
-        (diff > 0 ? " (" + diff + " Min. länger)" : "") + (res[other].desc ? ", via " + res[other].desc : "") + "."));
-    }
-    var d = started.getDay();
-    if (d === 0 || d === 6) nb.appendChild(el("p", "hint", "Heute ist Wochenende, die Verkehrslage ist nicht mit einem Schultag vergleichbar."));
-    if (nowMin > lessonMin) nb.appendChild(el("p", "hint", "Der Unterricht hat laut Einstellung schon begonnen."));
-  }
-
-  /* ---------- Jetzt von zu Hause: welche Brücke ist gerade schneller? ---------- */
-  async function runHome() {
-    var key = $("key").value.trim();
-    var hb = $("homeBody");
-    hb.innerHTML = "";
-    if (!key || !$("origin").value.trim() || !$("dest").value.trim()) {
-      hb.appendChild(el("p", "err", "Schlüssel, Start und Stiftsschule werden gebraucht."));
-      return;
-    }
-    save();
-    var btn = $("homeBtn");
-    btn.disabled = true; btn.textContent = "Frage aktuelle Verkehrslage ab…";
-    var started = new Date();
-    var res = {}, errs = [];
-    await Promise.all(ORDER.map(function (k) {
-      return post(body1(k, null), key).then(function (r) { res[k] = r; })
-        .catch(function (e) { errs.push(VIA[k].label + ": " + e.message); });
-    }));
-    btn.disabled = false; btn.textContent = "Von zu Hause: welche Brücke jetzt?";
-
-    errs.forEach(function (m) { hb.appendChild(el("p", "err", m)); });
-    var best = null;
-    ["kennedy", "adenauer"].forEach(function (k) {
-      if (res[k] && (!best || res[k].sec < res[best].sec)) best = k;
-    });
-    if (!best) return;
-
-    var c = res[best];
-    var nowMin = started.getHours() * 60 + started.getMinutes() + started.getSeconds() / 60;
-    var arrive = nowMin + c.sec / 60;
-    var limit = toMin($("arrive").value) - (+$("buffer").value || 0);
-    var margin = Math.round(limit - arrive);
-
-    var big = el("div", "big");
-    big.innerHTML = "Jetzt über die <span></span>";
-    big.querySelector("span").textContent = VIA[best].label;
-    hb.appendChild(big);
-
-    hb.appendChild(el("p", "", "Fahrt ca. " + fmtMin(c.sec) + ", " + km(c.km) + ". Ankunft vor der Schule ca. " + clock(arrive) +
-      " (plus " + ($("buffer").value || 0) + " Min. Puffer), gerechnet ab " + clock(nowMin) + " Uhr."));
-
-    var cls = margin >= 5 ? "good" : (margin >= 0 ? "warn" : "bad");
-    var txt = margin >= 0
-      ? (margin >= 5 ? "Schaffst du" : "Knapp") + " " + $("arrive").value + " Uhr: noch " + margin + " Min. Luft"
-      : "Schaffst du " + $("arrive").value + " Uhr nicht: " + (-margin) + " Min. zu spät";
-    hb.appendChild(el("span", "tag " + cls, txt));
-
-    ORDER.forEach(function (k) {
-      if (!res[k]) return;
-      var r = res[k];
-      var mark = k === best ? "→ " : "";
-      var diff = Math.round((r.sec - c.sec) / 60);
-      var line = mark + VIA[k].label + ": " + fmtMin(r.sec) + " · " + km(r.km) +
-        (k !== best && diff > 0 && k !== "google" ? " (" + diff + " Min. länger)" : "") +
-        (k === "google" && r.desc ? " · via " + r.desc : "");
-      hb.appendChild(el("p", "", line));
-    });
-    var d = started.getDay();
-    if (d === 0 || d === 6) hb.appendChild(el("p", "hint", "Heute ist Wochenende, die Verkehrslage ist nicht mit einem Schultag vergleichbar."));
   }
 
   $("homeBtn").addEventListener("click", runHome);
   $("nowBtn").addEventListener("click", runNow);
-  $("form").addEventListener("submit", run);
+  $("planBtn").addEventListener("click", runPlan);
+  $("form").addEventListener("submit", function (e) { e.preventDefault(); });
   ["from", "to", "work"].forEach(function (id) { $(id).addEventListener("input", updateCount); });
   $("forget").addEventListener("click", function () {
     $("key").value = "";
@@ -654,6 +747,8 @@
   });
   load();
   updateCount();
+  applySuggestion();
+  if (!$("key").value) $("settings").open = true;
 })();
 </script>
 </body>
