@@ -6,7 +6,7 @@
 <title>Schulweg Bonn</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-  /* Layout: eine Spalte, oben Empfehlung, darunter Vergleichstabelle, ganz unten Einstellungen */
+  /* Layout: eine Spalte. Oben Empfehlung (Hinweg + Weiterfahrt), darunter zwei Vergleichstabellen, unten Einstellungen */
   :root {
     --bg: #f3f5f4;
     --surface: #ffffff;
@@ -56,7 +56,10 @@
   .reco .big { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; text-wrap: balance; }
   .reco .big b { font-family: var(--mono); font-weight: 500; color: var(--accent); }
   .reco p { margin: 6px 0 0; color: var(--muted); }
-  .tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+  .leg { padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--line); }
+  .leg:first-child { padding-top: 0; margin-top: 0; border-top: 0; }
+  .legname { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin: 0 0 4px !important; }
+  .tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; font-weight: 500; margin-top: 8px; }
   .tag.good { background: var(--good-bg); color: var(--good); }
   .tag.warn { background: var(--warn-bg); color: var(--warn); }
   .tag.bad { background: var(--bad-bg); color: var(--bad); }
@@ -70,6 +73,8 @@
   td.best .sub2 { color: inherit; opacity: .85; }
   form { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .full { grid-column: 1 / -1; }
+  fieldset { border: 0; padding: 0; margin: 0; display: contents; }
+  .grp { grid-column: 1 / -1; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin: 6px 0 -4px; }
   label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 500; }
   input[type=text], input[type=password], input[type=time], input[type=number] {
     font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line);
@@ -94,18 +99,24 @@
 <main>
   <header>
     <h1>Schulweg Bonn</h1>
-    <p class="sub">Welche Brücke, wann losfahren? Prognose mit Verkehrsdaten von Google Routes.</p>
+    <p class="sub">Brücke und Abfahrt für den Hinweg, danach Weiterfahrt nach Troisdorf. Prognose mit Verkehrsdaten von Google Routes.</p>
   </header>
 
   <section class="panel reco" id="reco" aria-live="polite">
     <h2>Empfehlung</h2>
-    <div id="recoBody"><p class="note">Trage unten Schlüssel und Startadresse ein und tippe auf „Berechnen“.</p></div>
+    <div id="recoBody"><p class="note">Trage unten Schlüssel, Start und Arbeitsplatz ein und tippe auf „Berechnen“.</p></div>
   </section>
 
   <section class="panel" id="resultPanel" hidden>
-    <h2 id="resultTitle">Fahrzeiten je Abfahrt</h2>
+    <h2 id="resultTitle">Hinweg zur Stiftsschule</h2>
     <div class="scroll"><table id="table"></table></div>
     <p class="note" id="resultNote" style="margin-top:10px"></p>
+  </section>
+
+  <section class="panel" id="leg2Panel" hidden>
+    <h2 id="leg2Title">Weiterfahrt nach Troisdorf</h2>
+    <div class="scroll"><table id="table2"></table></div>
+    <p class="note" id="leg2Note" style="margin-top:10px"></p>
   </section>
 
   <section class="panel">
@@ -114,10 +125,12 @@
       <label class="full">Google-API-Schlüssel (Routes API)
         <input id="key" type="password" placeholder="AIza…" autocomplete="off" spellcheck="false">
       </label>
+
+      <div class="grp">Hinweg mit den Kindern</div>
       <label class="full">Start (Straße und Hausnummer, Bonn)
         <input id="origin" type="text" placeholder="z. B. Straße Hausnummer, 53229 Bonn">
       </label>
-      <label class="full">Ziel
+      <label class="full">Stiftsschule
         <input id="dest" type="text" value="Theaterstraße 60, 53111 Bonn">
       </label>
       <label>Spätestens an der Schule
@@ -126,12 +139,27 @@
       <label>Puffer Parken und Laufen (Min.)
         <input id="buffer" type="number" min="0" max="30" value="8">
       </label>
-      <label>Früheste Abfahrt
+      <label>Früheste Abfahrt zu Hause
         <input id="from" type="time" value="06:40">
       </label>
-      <label>Späteste Abfahrt
+      <label>Späteste Abfahrt zu Hause
         <input id="to" type="time" value="07:30">
       </label>
+
+      <div class="grp">Weiterfahrt zur Arbeit</div>
+      <label class="full">Europaschule Troisdorf (Adresse)
+        <input id="work" type="text" value="Am Bergeracker 31, 53840 Troisdorf">
+      </label>
+      <label>Unterrichtsbeginn
+        <input id="lesson" type="time" value="08:30">
+      </label>
+      <label>Puffer an der Schule (Min.)
+        <input id="workbuffer" type="number" min="0" max="30" value="10">
+      </label>
+      <label class="full">Früheste Abfahrt an der Stiftsschule
+        <input id="leave2" type="time" value="08:00">
+      </label>
+
       <div class="full actions">
         <button type="submit" id="go">Berechnen</button>
         <button type="button" class="ghost" id="forget">Schlüssel entfernen</button>
@@ -152,10 +180,16 @@
     google: { label: "Google-Vorschlag", address: null }
   };
   var ORDER = ["kennedy", "adenauer", "google"];
+  var VARIANTS = {
+    fast: { label: "Schnellste (Google)", avoid: false },
+    land: { label: "Ohne Autobahn", avoid: true }
+  };
+  var VORDER = ["fast", "land"];
   var STEP_MIN = 10;
+  var LEG2_SLOTS = [0, 10, 20];
 
   var $ = function (id) { return document.getElementById(id); };
-  var ids = ["key", "origin", "dest", "arrive", "buffer", "from", "to"];
+  var ids = ["key", "origin", "dest", "arrive", "buffer", "from", "to", "work", "lesson", "workbuffer", "leave2"];
 
   function load() {
     try {
@@ -172,6 +206,10 @@
   function pad(n) { return (n < 10 ? "0" : "") + n; }
   function hm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
   function toMin(v) { var p = (v || "0:0").split(":"); return (+p[0]) * 60 + (+p[1]); }
+  function clock(minutes) {
+    var m = Math.round(minutes);
+    return pad(Math.floor(m / 60)) + ":" + pad(m % 60);
+  }
 
   function slotMinutes() {
     var a = toMin($("from").value), b = toMin($("to").value), out = [];
@@ -179,25 +217,26 @@
     for (var m = a; m <= b; m += STEP_MIN) out.push(m);
     return out;
   }
+  function wantsLeg2() { return $("work").value.trim().length > 0; }
   function updateCount() {
-    var n = slotMinutes().length * ORDER.length;
+    var n = slotMinutes().length * ORDER.length + (wantsLeg2() ? LEG2_SLOTS.length * VORDER.length : 0);
     $("count").textContent = n + " Abfragen pro Berechnung";
   }
 
   function targetDay() {
     var now = new Date();
     var d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    var last = slotMinutes().slice(-1)[0] || 450;
+    var last = Math.max(slotMinutes().slice(-1)[0] || 450, toMin($("leave2").value) + LEG2_SLOTS[LEG2_SLOTS.length - 1]);
     var cutoff = new Date(d.getTime() + (last + 2) * 60000);
     if (now > cutoff) d.setDate(d.getDate() + 1);
     while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
     return d;
   }
 
-  function body(routeKey, depart) {
-    var b = {
-      origin: { address: $("origin").value.trim() },
-      destination: { address: $("dest").value.trim() },
+  function baseBody(from, to, depart) {
+    return {
+      origin: { address: from },
+      destination: { address: to },
       travelMode: "DRIVE",
       routingPreference: "TRAFFIC_AWARE_OPTIMAL",
       departureTime: depart.toISOString(),
@@ -205,43 +244,58 @@
       regionCode: "DE",
       units: "METRIC"
     };
+  }
+  function body1(routeKey, depart) {
+    var b = baseBody($("origin").value.trim(), $("dest").value.trim(), depart);
     if (VIA[routeKey].address) b.intermediates = [{ address: VIA[routeKey].address, via: true }];
     return b;
   }
+  function body2(variantKey, depart) {
+    var b = baseBody($("dest").value.trim(), $("work").value.trim(), depart);
+    if (VARIANTS[variantKey].avoid) b.routeModifiers = { avoidHighways: true };
+    return b;
+  }
 
-  async function ask(routeKey, depart, key) {
+  async function post(payload, key) {
     var res = await fetch(ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": key,
-        "X-Goog-FieldMask": "routes.duration,routes.staticDuration,routes.distanceMeters"
+        "X-Goog-FieldMask": "routes.duration,routes.staticDuration,routes.distanceMeters,routes.description"
       },
-      body: JSON.stringify(body(routeKey, depart))
+      body: JSON.stringify(payload)
     });
     var data = await res.json().catch(function () { return {}; });
     if (!res.ok) {
-      var msg = (data.error && data.error.message) || ("HTTP " + res.status);
-      throw new Error(msg);
+      throw new Error((data.error && data.error.message) || ("HTTP " + res.status));
     }
     var r = data.routes && data.routes[0];
-    if (!r) throw new Error("Keine Route gefunden. Prüfe Start- und Zieladresse.");
+    if (!r) throw new Error("Keine Route gefunden. Prüfe die Adressen.");
     return {
       sec: parseInt(r.duration, 10),
-      freeSec: r.staticDuration ? parseInt(r.staticDuration, 10) : null,
-      km: (r.distanceMeters || 0) / 1000
+      km: (r.distanceMeters || 0) / 1000,
+      desc: r.description || ""
     };
   }
 
   function fmtMin(sec) { return Math.round(sec / 60) + " Min."; }
-
   function dayLabel(d) {
     return d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
   }
+  function km(v) { return v.toFixed(1).replace(".", ",") + " km"; }
 
-  function render(day, slots, grid, errors) {
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  /* ---------- Hinweg ---------- */
+  function renderLeg1(day, slots, grid, errors) {
     var arriveMin = toMin($("arrive").value) - (+$("buffer").value || 0);
-    var best = null;
+    var best = null, fallback = null;
     slots.forEach(function (m, i) {
       ORDER.forEach(function (k) {
         var c = grid[i][k];
@@ -258,7 +312,6 @@
         if (!best || m > best.m || (m === best.m && c.sec < best.c.sec)) best = { m: m, i: i, k: k, c: c };
       });
     });
-    var fallback = null;
     if (!best) {
       slots.forEach(function (m, i) {
         ORDER.forEach(function (k) {
@@ -268,102 +321,191 @@
         });
       });
     }
+    var pick = best || fallback;
 
     var rb = $("recoBody");
     rb.innerHTML = "";
-    errors.forEach(function (e) {
-      var p = document.createElement("p"); p.className = "err"; p.textContent = e; rb.appendChild(p);
-    });
-    var pick = best || fallback;
+    errors.forEach(function (e) { rb.appendChild(el("p", "err", e)); });
+
+    var leg = el("div", "leg");
+    leg.appendChild(el("p", "legname", "Hinweg zur Stiftsschule"));
     if (pick) {
-      var depTxt = pad(Math.floor(pick.m / 60)) + ":" + pad(pick.m % 60);
-      var arrTxt = hm(new Date(2000, 0, 1, 0, Math.round(pick.c.arrive)));
-      var big = document.createElement("div"); big.className = "big";
+      var big = el("div", "big");
       big.innerHTML = (best ? "Spätestens " : "Bestes Ergebnis: ") + "<b></b> los, über die <span></span>";
-      big.querySelector("b").textContent = depTxt;
+      big.querySelector("b").textContent = clock(pick.m);
       big.querySelector("span").textContent = VIA[pick.k].label;
-      rb.appendChild(big);
-      var p = document.createElement("p");
-      p.textContent = "Fahrt ca. " + fmtMin(pick.c.sec) + ", Ankunft vor der Schule ca. " + arrTxt +
-        " (plus " + ($("buffer").value || 0) + " Min. Puffer) – " + dayLabel(day) + ".";
-      rb.appendChild(p);
-      var t = document.createElement("span");
-      t.className = "tag " + (best ? "good" : "bad");
-      t.style.marginTop = "8px";
-      t.textContent = best ? "schafft " + $("arrive").value + " Uhr" : "schafft " + $("arrive").value + " Uhr nicht";
-      rb.appendChild(t);
-      if (!best) {
-        var h = document.createElement("p"); h.className = "hint";
-        h.textContent = "Selbst die früheste Abfahrt kommt zu spät an. Setze die früheste Abfahrt weiter nach vorn.";
-        rb.appendChild(h);
-      }
+      leg.appendChild(big);
+      leg.appendChild(el("p", "", "Fahrt ca. " + fmtMin(pick.c.sec) + ", Ankunft vor der Schule ca. " + clock(pick.c.arrive) +
+        " (plus " + ($("buffer").value || 0) + " Min. Puffer), " + dayLabel(day) + "."));
+      leg.appendChild(el("span", "tag " + (best ? "good" : "bad"),
+        best ? "schafft " + $("arrive").value + " Uhr" : "schafft " + $("arrive").value + " Uhr nicht"));
+      if (!best) leg.appendChild(el("p", "hint", "Selbst die früheste Abfahrt kommt zu spät an. Setze die früheste Abfahrt weiter nach vorn."));
     } else if (!errors.length) {
-      rb.innerHTML = '<p class="note">Keine Ergebnisse.</p>';
+      leg.appendChild(el("p", "note", "Keine Ergebnisse."));
     }
+    rb.appendChild(leg);
 
     var t = $("table");
     t.innerHTML = "";
     var thead = t.createTHead().insertRow();
-    var th0 = document.createElement("th"); th0.textContent = "Abfahrt"; thead.appendChild(th0);
-    ORDER.forEach(function (k) {
-      var th = document.createElement("th"); th.textContent = VIA[k].label; thead.appendChild(th);
-    });
+    thead.appendChild(el("th", "", "Abfahrt"));
+    ORDER.forEach(function (k) { thead.appendChild(el("th", "", VIA[k].label)); });
     var tb = t.createTBody();
     slots.forEach(function (m, i) {
       var tr = tb.insertRow();
-      var td0 = tr.insertCell(); td0.className = "time";
-      td0.textContent = pad(Math.floor(m / 60)) + ":" + pad(m % 60);
+      var td0 = tr.insertCell(); td0.className = "time"; td0.textContent = clock(m);
       ORDER.forEach(function (k) {
         var td = tr.insertCell();
         var c = grid[i][k];
         if (!c) { td.textContent = "–"; return; }
         td.textContent = fmtMin(c.sec);
-        var s = document.createElement("span"); s.className = "sub2";
-        s.textContent = "an " + hm(new Date(2000, 0, 1, 0, Math.round(c.arrive))) + " · " + c.km.toFixed(1).replace(".", ",") + " km";
-        td.appendChild(s);
+        td.appendChild(el("span", "sub2", "an " + clock(c.arrive) + " · " + km(c.km)));
         if (pick && k === pick.k && i === pick.i) td.className = "best";
       });
     });
-    $("resultTitle").textContent = "Fahrzeiten je Abfahrt · " + dayLabel(day);
-    $("resultNote").textContent = "Prognose auf Basis typischer Verkehrslage für diesen Wochentag, keine Live-Messung. „Ankunft“ ist die Ankunft an der Zieladresse ohne Puffer.";
+    $("resultTitle").textContent = "Hinweg zur Stiftsschule · " + dayLabel(day);
+    $("resultNote").textContent = "Prognose auf Basis typischer Verkehrslage für diesen Wochentag, keine Live-Messung. „An“ ist die Ankunft an der Zieladresse ohne Puffer.";
     $("resultPanel").hidden = false;
+  }
+
+  /* ---------- Weiterfahrt ---------- */
+  function renderLeg2(day, starts, grid, errors) {
+    var lessonMin = toMin($("lesson").value);
+    var wb = +$("workbuffer").value || 0;
+    var rb = $("recoBody");
+    var leg = el("div", "leg");
+    leg.appendChild(el("p", "legname", "Weiterfahrt nach Troisdorf"));
+
+    starts.forEach(function (m, i) {
+      VORDER.forEach(function (k) {
+        var c = grid[i][k];
+        if (!c) return;
+        c.arrive = m + c.sec / 60;
+        c.margin = lessonMin - (c.arrive + wb);
+      });
+    });
+
+    var first = grid[0] || {};
+    var pick = null;
+    VORDER.forEach(function (k) {
+      var c = first[k];
+      if (!c) return;
+      if (!pick || c.arrive < pick.c.arrive) pick = { k: k, c: c };
+    });
+
+    if (pick) {
+      var c = pick.c;
+      var other = pick.k === "fast" ? "land" : "fast";
+      var oc = first[other];
+      var big = el("div", "big");
+      big.innerHTML = "Ab <b></b> über <span></span>";
+      big.querySelector("b").textContent = clock(starts[0]);
+      var via = pick.k === "land" ? "die Landstraße" : (c.desc ? c.desc : "den schnellsten Weg");
+      big.querySelector("span").textContent = via;
+      leg.appendChild(big);
+
+      var line = "Fahrt ca. " + fmtMin(c.sec) + ", Ankunft ca. " + clock(c.arrive) + ", Unterrichtsbeginn " + $("lesson").value + " Uhr.";
+      leg.appendChild(el("p", "", line));
+      if (oc) {
+        var diff = Math.round((oc.sec - c.sec) / 60);
+        var cmp = pick.k === "land"
+          ? "Die Fahrt über Autobahn dauert ca. " + fmtMin(oc.sec) + (diff > 0 ? " (" + diff + " Min. länger)." : ".")
+          : "Ohne Autobahn dauert es ca. " + fmtMin(oc.sec) + (diff > 0 ? " (" + diff + " Min. länger)." : ".");
+        leg.appendChild(el("p", "", cmp));
+      }
+      var margin = Math.round(c.margin);
+      var cls = margin >= 5 ? "good" : (margin >= 0 ? "warn" : "bad");
+      var txt = margin >= 0
+        ? (margin >= 5 ? "schaffst du" : "knapp") + ": noch " + margin + " Min. Luft nach " + wb + " Min. Puffer"
+        : "schaffst du nicht: " + (-margin) + " Min. zu spät (mit " + wb + " Min. Puffer)";
+      leg.appendChild(el("span", "tag " + cls, txt));
+    } else {
+      leg.appendChild(el("p", "note", "Keine Ergebnisse für die Weiterfahrt."));
+    }
+    errors.forEach(function (e) { leg.appendChild(el("p", "err", e)); });
+    rb.appendChild(leg);
+
+    var t = $("table2");
+    t.innerHTML = "";
+    var thead = t.createTHead().insertRow();
+    thead.appendChild(el("th", "", "Abfahrt"));
+    VORDER.forEach(function (k) { thead.appendChild(el("th", "", VARIANTS[k].label)); });
+    var tb = t.createTBody();
+    starts.forEach(function (m, i) {
+      var tr = tb.insertRow();
+      tr.insertCell().className = "time";
+      tr.cells[0].textContent = clock(m);
+      VORDER.forEach(function (k) {
+        var td = tr.insertCell();
+        var c = grid[i][k];
+        if (!c) { td.textContent = "–"; return; }
+        td.textContent = fmtMin(c.sec);
+        var sub = "an " + clock(c.arrive) + " · " + km(c.km) + (c.desc ? " · via " + c.desc : "");
+        td.appendChild(el("span", "sub2", sub));
+        if (pick && i === 0 && k === pick.k) td.className = "best";
+      });
+    });
+    $("leg2Title").textContent = "Weiterfahrt nach Troisdorf · " + dayLabel(day);
+    $("leg2Note").textContent = "Die späteren Abfahrten zeigen, wie viel Zeit du bei Verzögerungen an der Schule hast. Prognose aus typischer Verkehrslage, keine Live-Messung. „Ohne Autobahn“ vermeidet Autobahnen nach Möglichkeit.";
+    $("leg2Panel").hidden = false;
   }
 
   async function run(ev) {
     ev.preventDefault();
     var key = $("key").value.trim();
-    var errors = [];
     if (!key || !$("origin").value.trim() || !$("dest").value.trim()) {
-      $("recoBody").innerHTML = '<p class="err">Schlüssel, Start und Ziel werden gebraucht.</p>';
+      $("recoBody").innerHTML = '<p class="err">Schlüssel, Start und Stiftsschule werden gebraucht.</p>';
       return;
     }
     save();
     var day = targetDay();
     var mins = slotMinutes();
     var grid = mins.map(function () { return {}; });
+    var errors1 = [], errors2 = [];
+    var withLeg2 = wantsLeg2();
+    var starts = LEG2_SLOTS.map(function (d) { return toMin($("leave2").value) + d; });
+    var grid2 = starts.map(function () { return {}; });
+
     var go = $("go"); go.disabled = true; go.textContent = "Rechne…";
-    $("recoBody").innerHTML = '<p class="note">Frage Google nach ' + (mins.length * ORDER.length) + ' Routen…</p>';
+    $("recoBody").innerHTML = '<p class="note">Frage Google nach Routen…</p>';
 
     var jobs = [];
     mins.forEach(function (m, i) {
       var depart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, m);
       ORDER.forEach(function (k) {
         jobs.push(
-          ask(k, depart, key).then(function (r) { grid[i][k] = r; })
+          post(body1(k, depart), key).then(function (r) { grid[i][k] = r; })
             .catch(function (e) {
-              var msg = VIA[k].label + " " + pad(Math.floor(m / 60)) + ":" + pad(m % 60) + ": " + e.message;
-              if (errors.indexOf(msg) === -1 && errors.length < 3) errors.push(msg);
+              var msg = VIA[k].label + " " + clock(m) + ": " + e.message;
+              if (errors1.indexOf(msg) === -1 && errors1.length < 3) errors1.push(msg);
             })
         );
       });
     });
+    if (withLeg2) {
+      starts.forEach(function (m, i) {
+        var depart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, m);
+        VORDER.forEach(function (k) {
+          jobs.push(
+            post(body2(k, depart), key).then(function (r) { grid2[i][k] = r; })
+              .catch(function (e) {
+                var msg = "Weiterfahrt " + VARIANTS[k].label + " " + clock(m) + ": " + e.message;
+                if (errors2.indexOf(msg) === -1 && errors2.length < 3) errors2.push(msg);
+              })
+          );
+        });
+      });
+    } else {
+      $("leg2Panel").hidden = true;
+    }
     await Promise.all(jobs);
-    render(day, mins, grid, errors);
+    renderLeg1(day, mins, grid, errors1);
+    if (withLeg2) renderLeg2(day, starts, grid2, errors2);
     go.disabled = false; go.textContent = "Berechnen";
   }
 
   $("form").addEventListener("submit", run);
-  ["from", "to"].forEach(function (id) { $(id).addEventListener("input", updateCount); });
+  ["from", "to", "work"].forEach(function (id) { $(id).addEventListener("input", updateCount); });
   $("forget").addEventListener("click", function () {
     $("key").value = "";
     try { localStorage.removeItem("schulweg.key"); } catch (e) {}
