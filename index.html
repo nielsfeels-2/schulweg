@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Schulweg Bonn</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  /* Layout: eine Spalte, oben Empfehlung, darunter Vergleichstabelle, ganz unten Einstellungen */
+  :root {
+    --bg: #f3f5f4;
+    --surface: #ffffff;
+    --fg: #17201d;
+    --muted: #5b6863;
+    --line: #d9dfdc;
+    --accent: #0b6b55;
+    --accent-fg: #ffffff;
+    --good: #0b6b55;
+    --good-bg: #dff1ea;
+    --warn: #8a5a00;
+    --warn-bg: #fbefd1;
+    --bad: #a3261d;
+    --bad-bg: #f9dfdc;
+    --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101614; --surface: #18201d; --fg: #e6ece9; --muted: #92a19b; --line: #2b3733;
+      --accent: #4fc2a3; --accent-fg: #0b1512; --good: #6fd6b8; --good-bg: #17352c;
+      --warn: #e9b950; --warn-bg: #35290e; --bad: #ff8d83; --bad-bg: #3b1916;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101614; --surface: #18201d; --fg: #e6ece9; --muted: #92a19b; --line: #2b3733;
+    --accent: #4fc2a3; --accent-fg: #0b1512; --good: #6fd6b8; --good-bg: #17352c;
+    --warn: #e9b950; --warn-bg: #35290e; --bad: #ff8d83; --bad-bg: #3b1916;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.5 var(--font);
+    padding-block: 20px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  main { max-width: 760px; margin: 0 auto; display: grid; gap: 16px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+  h2 { font-size: 12px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+  .sub { color: var(--muted); margin: 2px 0 0; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+  .reco { border-color: var(--accent); }
+  .reco .big { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; text-wrap: balance; }
+  .reco .big b { font-family: var(--mono); font-weight: 500; color: var(--accent); }
+  .reco p { margin: 6px 0 0; color: var(--muted); }
+  .tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+  .tag.good { background: var(--good-bg); color: var(--good); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  .tag.bad { background: var(--bad-bg); color: var(--bad); }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 520px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  td.time { font-family: var(--mono); }
+  td.best { background: var(--good-bg); color: var(--good); font-weight: 600; }
+  td .sub2 { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
+  td.best .sub2 { color: inherit; opacity: .85; }
+  form { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .full { grid-column: 1 / -1; }
+  label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 500; }
+  input[type=text], input[type=password], input[type=time], input[type=number] {
+    font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 7px; padding: 9px 10px; width: 100%; min-width: 0;
+  }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button {
+    font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-fg);
+    border: 0; border-radius: 8px; padding: 11px 18px; cursor: pointer;
+  }
+  button.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); font-weight: 500; }
+  button:disabled { opacity: .55; cursor: progress; }
+  .note { font-size: 13px; color: var(--muted); margin: 0; }
+  .err { background: var(--bad-bg); color: var(--bad); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin: 0 0 8px; overflow-wrap: anywhere; }
+  .hint { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin: 8px 0 0; }
+  @media (max-width: 520px) { form { grid-template-columns: minmax(0, 1fr); } .reco .big { font-size: 22px; } }
+  @media (prefers-reduced-motion: no-preference) { button { transition: opacity .15s; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Schulweg Bonn</h1>
+    <p class="sub">Welche Brücke, wann losfahren? Prognose mit Verkehrsdaten von Google Routes.</p>
+  </header>
+
+  <section class="panel reco" id="reco" aria-live="polite">
+    <h2>Empfehlung</h2>
+    <div id="recoBody"><p class="note">Trage unten Schlüssel und Startadresse ein und tippe auf „Berechnen“.</p></div>
+  </section>
+
+  <section class="panel" id="resultPanel" hidden>
+    <h2 id="resultTitle">Fahrzeiten je Abfahrt</h2>
+    <div class="scroll"><table id="table"></table></div>
+    <p class="note" id="resultNote" style="margin-top:10px"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Einstellungen</h2>
+    <form id="form" autocomplete="off">
+      <label class="full">Google-API-Schlüssel (Routes API)
+        <input id="key" type="password" placeholder="AIza…" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="full">Start (Straße und Hausnummer, Bonn)
+        <input id="origin" type="text" placeholder="z. B. Straße Hausnummer, 53229 Bonn">
+      </label>
+      <label class="full">Ziel
+        <input id="dest" type="text" value="Theaterstraße 60, 53111 Bonn">
+      </label>
+      <label>Spätestens an der Schule
+        <input id="arrive" type="time" value="07:50">
+      </label>
+      <label>Puffer Parken und Laufen (Min.)
+        <input id="buffer" type="number" min="0" max="30" value="8">
+      </label>
+      <label>Früheste Abfahrt
+        <input id="from" type="time" value="06:40">
+      </label>
+      <label>Späteste Abfahrt
+        <input id="to" type="time" value="07:30">
+      </label>
+      <div class="full actions">
+        <button type="submit" id="go">Berechnen</button>
+        <button type="button" class="ghost" id="forget">Schlüssel entfernen</button>
+        <span class="note" id="count"></span>
+      </div>
+      <p class="note full">Der Schlüssel bleibt in diesem Browser und geht nur an Google. Beschränke ihn in der Google Cloud Console auf die Routes API und stelle ein Budget-Limit ein. Prognose-Abfragen mit Verkehr zählen als „Compute Routes Pro“.</p>
+    </form>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes";
+  var VIA = {
+    kennedy: { label: "Kennedybrücke", address: "Kennedybrücke, Bonn" },
+    adenauer: { label: "Konrad-Adenauer-Brücke", address: "Konrad-Adenauer-Brücke, Bonn" },
+    google: { label: "Google-Vorschlag", address: null }
+  };
+  var ORDER = ["kennedy", "adenauer", "google"];
+  var STEP_MIN = 10;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var ids = ["key", "origin", "dest", "arrive", "buffer", "from", "to"];
+
+  function load() {
+    try {
+      ids.forEach(function (id) {
+        var v = localStorage.getItem("schulweg." + id);
+        if (v !== null) $(id).value = v;
+      });
+    } catch (e) {}
+  }
+  function save() {
+    try { ids.forEach(function (id) { localStorage.setItem("schulweg." + id, $(id).value); }); } catch (e) {}
+  }
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function hm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  function toMin(v) { var p = (v || "0:0").split(":"); return (+p[0]) * 60 + (+p[1]); }
+
+  function slotMinutes() {
+    var a = toMin($("from").value), b = toMin($("to").value), out = [];
+    if (b < a) b = a;
+    for (var m = a; m <= b; m += STEP_MIN) out.push(m);
+    return out;
+  }
+  function updateCount() {
+    var n = slotMinutes().length * ORDER.length;
+    $("count").textContent = n + " Abfragen pro Berechnung";
+  }
+
+  function targetDay() {
+    var now = new Date();
+    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var last = slotMinutes().slice(-1)[0] || 450;
+    var cutoff = new Date(d.getTime() + (last + 2) * 60000);
+    if (now > cutoff) d.setDate(d.getDate() + 1);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    return d;
+  }
+
+  function body(routeKey, depart) {
+    var b = {
+      origin: { address: $("origin").value.trim() },
+      destination: { address: $("dest").value.trim() },
+      travelMode: "DRIVE",
+      routingPreference: "TRAFFIC_AWARE_OPTIMAL",
+      departureTime: depart.toISOString(),
+      languageCode: "de-DE",
+      regionCode: "DE",
+      units: "METRIC"
+    };
+    if (VIA[routeKey].address) b.intermediates = [{ address: VIA[routeKey].address, via: true }];
+    return b;
+  }
+
+  async function ask(routeKey, depart, key) {
+    var res = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": "routes.duration,routes.staticDuration,routes.distanceMeters"
+      },
+      body: JSON.stringify(body(routeKey, depart))
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) {
+      var msg = (data.error && data.error.message) || ("HTTP " + res.status);
+      throw new Error(msg);
+    }
+    var r = data.routes && data.routes[0];
+    if (!r) throw new Error("Keine Route gefunden. Prüfe Start- und Zieladresse.");
+    return {
+      sec: parseInt(r.duration, 10),
+      freeSec: r.staticDuration ? parseInt(r.staticDuration, 10) : null,
+      km: (r.distanceMeters || 0) / 1000
+    };
+  }
+
+  function fmtMin(sec) { return Math.round(sec / 60) + " Min."; }
+
+  function dayLabel(d) {
+    return d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+  }
+
+  function render(day, slots, grid, errors) {
+    var arriveMin = toMin($("arrive").value) - (+$("buffer").value || 0);
+    var best = null;
+    slots.forEach(function (m, i) {
+      ORDER.forEach(function (k) {
+        var c = grid[i][k];
+        if (!c) return;
+        c.arrive = m + c.sec / 60;
+        c.ok = c.arrive <= arriveMin;
+      });
+    });
+    slots.forEach(function (m, i) {
+      ORDER.forEach(function (k) {
+        if (k === "google") return;
+        var c = grid[i][k];
+        if (!c || !c.ok) return;
+        if (!best || m > best.m || (m === best.m && c.sec < best.c.sec)) best = { m: m, i: i, k: k, c: c };
+      });
+    });
+    var fallback = null;
+    if (!best) {
+      slots.forEach(function (m, i) {
+        ORDER.forEach(function (k) {
+          var c = grid[i][k];
+          if (!c || k === "google") return;
+          if (!fallback || c.arrive < fallback.c.arrive) fallback = { m: m, i: i, k: k, c: c };
+        });
+      });
+    }
+
+    var rb = $("recoBody");
+    rb.innerHTML = "";
+    errors.forEach(function (e) {
+      var p = document.createElement("p"); p.className = "err"; p.textContent = e; rb.appendChild(p);
+    });
+    var pick = best || fallback;
+    if (pick) {
+      var depTxt = pad(Math.floor(pick.m / 60)) + ":" + pad(pick.m % 60);
+      var arrTxt = hm(new Date(2000, 0, 1, 0, Math.round(pick.c.arrive)));
+      var big = document.createElement("div"); big.className = "big";
+      big.innerHTML = (best ? "Spätestens " : "Bestes Ergebnis: ") + "<b></b> los, über die <span></span>";
+      big.querySelector("b").textContent = depTxt;
+      big.querySelector("span").textContent = VIA[pick.k].label;
+      rb.appendChild(big);
+      var p = document.createElement("p");
+      p.textContent = "Fahrt ca. " + fmtMin(pick.c.sec) + ", Ankunft vor der Schule ca. " + arrTxt +
+        " (plus " + ($("buffer").value || 0) + " Min. Puffer) – " + dayLabel(day) + ".";
+      rb.appendChild(p);
+      var t = document.createElement("span");
+      t.className = "tag " + (best ? "good" : "bad");
+      t.style.marginTop = "8px";
+      t.textContent = best ? "schafft " + $("arrive").value + " Uhr" : "schafft " + $("arrive").value + " Uhr nicht";
+      rb.appendChild(t);
+      if (!best) {
+        var h = document.createElement("p"); h.className = "hint";
+        h.textContent = "Selbst die früheste Abfahrt kommt zu spät an. Setze die früheste Abfahrt weiter nach vorn.";
+        rb.appendChild(h);
+      }
+    } else if (!errors.length) {
+      rb.innerHTML = '<p class="note">Keine Ergebnisse.</p>';
+    }
+
+    var t = $("table");
+    t.innerHTML = "";
+    var thead = t.createTHead().insertRow();
+    var th0 = document.createElement("th"); th0.textContent = "Abfahrt"; thead.appendChild(th0);
+    ORDER.forEach(function (k) {
+      var th = document.createElement("th"); th.textContent = VIA[k].label; thead.appendChild(th);
+    });
+    var tb = t.createTBody();
+    slots.forEach(function (m, i) {
+      var tr = tb.insertRow();
+      var td0 = tr.insertCell(); td0.className = "time";
+      td0.textContent = pad(Math.floor(m / 60)) + ":" + pad(m % 60);
+      ORDER.forEach(function (k) {
+        var td = tr.insertCell();
+        var c = grid[i][k];
+        if (!c) { td.textContent = "–"; return; }
+        td.textContent = fmtMin(c.sec);
+        var s = document.createElement("span"); s.className = "sub2";
+        s.textContent = "an " + hm(new Date(2000, 0, 1, 0, Math.round(c.arrive))) + " · " + c.km.toFixed(1).replace(".", ",") + " km";
+        td.appendChild(s);
+        if (pick && k === pick.k && i === pick.i) td.className = "best";
+      });
+    });
+    $("resultTitle").textContent = "Fahrzeiten je Abfahrt · " + dayLabel(day);
+    $("resultNote").textContent = "Prognose auf Basis typischer Verkehrslage für diesen Wochentag, keine Live-Messung. „Ankunft“ ist die Ankunft an der Zieladresse ohne Puffer.";
+    $("resultPanel").hidden = false;
+  }
+
+  async function run(ev) {
+    ev.preventDefault();
+    var key = $("key").value.trim();
+    var errors = [];
+    if (!key || !$("origin").value.trim() || !$("dest").value.trim()) {
+      $("recoBody").innerHTML = '<p class="err">Schlüssel, Start und Ziel werden gebraucht.</p>';
+      return;
+    }
+    save();
+    var day = targetDay();
+    var mins = slotMinutes();
+    var grid = mins.map(function () { return {}; });
+    var go = $("go"); go.disabled = true; go.textContent = "Rechne…";
+    $("recoBody").innerHTML = '<p class="note">Frage Google nach ' + (mins.length * ORDER.length) + ' Routen…</p>';
+
+    var jobs = [];
+    mins.forEach(function (m, i) {
+      var depart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, m);
+      ORDER.forEach(function (k) {
+        jobs.push(
+          ask(k, depart, key).then(function (r) { grid[i][k] = r; })
+            .catch(function (e) {
+              var msg = VIA[k].label + " " + pad(Math.floor(m / 60)) + ":" + pad(m % 60) + ": " + e.message;
+              if (errors.indexOf(msg) === -1 && errors.length < 3) errors.push(msg);
+            })
+        );
+      });
+    });
+    await Promise.all(jobs);
+    render(day, mins, grid, errors);
+    go.disabled = false; go.textContent = "Berechnen";
+  }
+
+  $("form").addEventListener("submit", run);
+  ["from", "to"].forEach(function (id) { $(id).addEventListener("input", updateCount); });
+  $("forget").addEventListener("click", function () {
+    $("key").value = "";
+    try { localStorage.removeItem("schulweg.key"); } catch (e) {}
+  });
+  load();
+  updateCount();
+})();
+</script>
+</body>
+</html>
